@@ -14,7 +14,7 @@ Supported system families:
 
 # usage
 
-Since vyger is distributed as one module it can be fetched and run directly to the target system.
+Since vyger is distributed as a single Python3 module with only standard library dependencies, it can be fetched to and run directly on the target system.
 
 ```sh
 curl -sS https://raw.githubusercontent.com/mrodden/vyger/master/cve.py | python3
