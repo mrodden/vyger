@@ -40,7 +40,7 @@ CVE-2019-1543 on Ubuntu 18.04 LTS (bionic) - low. Alert: 'openssl' is at 1.1.0g-
 In this case we would want to grab the latest openssl package available and re-run the tool:
 ```sh
 # grab the latest openssl updates
-$ sudo apt-get install openssl
+$ sudo apt-get install -y openssl
 ...
 
 # no output because we have all fixes avaiable currently on this 18.04 LTS host
