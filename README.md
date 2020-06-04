@@ -43,7 +43,7 @@ In this case we would want to grab the latest openssl package available and re-r
 $ sudo apt-get install -y openssl
 ...
 
-# no output because we have all fixes avaiable currently on this 18.04 LTS host
+# no output because now we have all fixes currently available on this 18.04 LTS host
 $ python3 cve.py
 $
 ```
