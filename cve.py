@@ -1,8 +1,7 @@
 
-import re
 import json
-
-from lxml import etree, objectify
+import re
+import xml.etree.ElementTree as ET
 
 
 class Definition(object):
@@ -37,21 +36,23 @@ class Definition(object):
         return this
 
 
+default_ns = "{http://oval.mitre.org/XMLSchema/oval-definitions-5}"
+
 def parse(file_name):
 
     with open(file_name) as xmlfile:
-        tree = objectify.parse(xmlfile)
+        tree = ET.parse(xmlfile)
 
     root = tree.getroot()
 
     defs = []
-    for xdef in root.definitions.definition:
+    for xdef in root.iter(default_ns + "definition"):
 
         cve_id = ""
         severity = ""
         refs = []
 
-        for xref in xdef.metadata.findall("{*}reference"):
+        for xref in xdef.iter(default_ns + "reference"):
             ref = {
                 "source": xref.get("source"),
                 "ref_id": xref.get("ref_id"),
@@ -63,35 +64,41 @@ def parse(file_name):
             refs.append(ref)
 
 
-        advisories = xdef.metadata.findall("{*}advisory")
-        if advisories:
-            severity = str(xdef.metadata.advisory.severity)
+        advisory = xdef.find("%smetadata/%sadvisory" % (default_ns, default_ns))
+        if advisory:
+            sev = advisory.find(default_ns + "severity")
+            if sev is not None and sev.text is not None:
+                severity = sev.text
 
-            for xref in xdef.metadata.advisory.ref:
+            for xref in advisory.iter(default_ns + "ref"):
                 ref = {
                     "source": "ref",
-                    "ref_url": str(xref),
+                    "ref_url": xref.text,
                 }
                 refs.append(ref)
 
-            for xref in xdef.metadata.advisory.findall("{*}bug"):
+            for xref in advisory.iter(default_ns + "bug"):
                 ref = {
                     "source": "ref",
-                    "ref_url": str(xref),
+                    "ref_url": xref.text,
                 }
                 refs.append(ref)
 
         df = Definition()
         df.definition_id = xdef.get("id")
 
-        try:
-            df.title = xdef.metadata.title.text
-        except AttributeError:
+        metadata = xdef.find(default_ns + "metadata")
+
+        title = metadata.find(default_ns + "title")
+        if title is not None:
+            df.title = title.text
+        else:
             df.title = ""
 
-        try:
-            df.description = xdef.metadata.description.text
-        except AttributeError:
+        description = metadata.find(default_ns + "description")
+        if description is not None:
+            df.description = description.text
+        else:
             df.description = ""
 
         df.references = refs
@@ -100,7 +107,7 @@ def parse(file_name):
         df.debian = {"cve_id": cve_id}
 
         packs = []
-        scrape_pack_data(packs, xdef.criteria)
+        scrape_pack_data(packs, xdef.find(default_ns + "criteria"))
         df.affected_packs = packs
 
         defs.append(df)
@@ -115,7 +122,7 @@ undecided = re.compile(r"^(?P<package>.+) package in .+ is affected, but a decis
 
 def scrape_pack_data(packs, criteria):
 
-    for crit in criteria.findall(".//{*}criterion"):
+    for crit in criteria.iter(default_ns + "criterion"):
         if crit.get("negate"):
             continue
 
